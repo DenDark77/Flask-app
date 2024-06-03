@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'dbname'
+      MYSQL_USER: 'username'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'root_password'
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:latest
+    restart: always
+
+  web:
+    build: .
+    command: flask run --host=0.0.0.0
+    volumes:
+      - .:/code
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build: .
+    command: celery -A app.celery_worker.celery worker
+    volumes:
+      - .:/code
+    depends_on:
+      - web
+      - redis
+
+volumes:
+  db_data:
